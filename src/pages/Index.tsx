@@ -14,6 +14,7 @@ export default function Index() {
   const [screen, setScreen] = useState<Screen>("splash");
   const [tab, setTab] = useState<"map" | "list">("map");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [search, setSearch] = useState("");
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
 
   const filtered = useMemo(() => {
@@ -50,6 +51,8 @@ export default function Index() {
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
+                  search={search}
+                  onSearchChange={setSearch}
                 />
               ) : (
                 <ListView
@@ -57,6 +60,8 @@ export default function Index() {
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
+                  search={search}
+                  onSearchChange={setSearch}
                 />
               )}
             </div>
