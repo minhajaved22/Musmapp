@@ -13,7 +13,7 @@ type Screen = "splash" | "main";
 
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("splash");
-  const [tab, setTab] = useState<"map" | "list">("map");
+  const [tab, setTab] = useState<"map" | "list" | "qibla">("map");
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
