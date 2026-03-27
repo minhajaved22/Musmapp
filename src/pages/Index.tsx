@@ -51,6 +51,8 @@ export default function Index() {
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
+                  search={search}
+                  onSearchChange={setSearch}
                 />
               ) : (
                 <ListView
@@ -58,6 +60,8 @@ export default function Index() {
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
+                  search={search}
+                  onSearchChange={setSearch}
                 />
               )}
             </div>
