@@ -1,0 +1,138 @@
+export interface Mosque {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  distanceMiles: number;
+  isOpen: boolean;
+  hasFemaleSpace: boolean;
+  hasWudu: boolean;
+  hasWheelchairAccess: boolean;
+  hasParking: boolean;
+  jummuahTime: string | null;
+  khutbahTime: string | null;
+}
+
+export const mosques: Mosque[] = [
+  {
+    id: "1",
+    name: "East London Mosque",
+    address: "82-92 Whitechapel Rd, London E1 1JQ",
+    lat: 51.5178,
+    lng: -0.0658,
+    distanceMiles: 0.3,
+    isOpen: true,
+    hasFemaleSpace: true,
+    hasWudu: true,
+    hasWheelchairAccess: true,
+    hasParking: false,
+    jummuahTime: "13:30",
+    khutbahTime: "13:00",
+  },
+  {
+    id: "2",
+    name: "London Central Mosque",
+    address: "146 Park Rd, London NW8 7RG",
+    lat: 51.5277,
+    lng: -0.1536,
+    distanceMiles: 1.2,
+    isOpen: true,
+    hasFemaleSpace: true,
+    hasWudu: true,
+    hasWheelchairAccess: true,
+    hasParking: true,
+    jummuahTime: "13:15",
+    khutbahTime: "12:45",
+  },
+  {
+    id: "3",
+    name: "Brixton Mosque",
+    address: "1 Gresham Rd, London SW9 7PH",
+    lat: 51.4613,
+    lng: -0.1145,
+    distanceMiles: 2.1,
+    isOpen: true,
+    hasFemaleSpace: false,
+    hasWudu: true,
+    hasWheelchairAccess: false,
+    hasParking: false,
+    jummuahTime: "13:30",
+    khutbahTime: "13:00",
+  },
+  {
+    id: "4",
+    name: "Finsbury Park Mosque",
+    address: "7-11 St Thomas's Rd, London N4 2QH",
+    lat: 51.5649,
+    lng: -0.1063,
+    distanceMiles: 3.4,
+    isOpen: false,
+    hasFemaleSpace: true,
+    hasWudu: true,
+    hasWheelchairAccess: true,
+    hasParking: true,
+    jummuahTime: "13:00",
+    khutbahTime: "12:30",
+  },
+  {
+    id: "5",
+    name: "Tooting Islamic Centre",
+    address: "30 Gatton Rd, London SW17 0ES",
+    lat: 51.4318,
+    lng: -0.1668,
+    distanceMiles: 4.7,
+    isOpen: true,
+    hasFemaleSpace: true,
+    hasWudu: true,
+    hasWheelchairAccess: false,
+    hasParking: true,
+    jummuahTime: "13:30",
+    khutbahTime: "13:00",
+  },
+  {
+    id: "6",
+    name: "Masjid al-Tawhid",
+    address: "80 Cheshire St, London E2 6EH",
+    lat: 51.5237,
+    lng: -0.0672,
+    distanceMiles: 0.5,
+    isOpen: true,
+    hasFemaleSpace: false,
+    hasWudu: true,
+    hasWheelchairAccess: false,
+    hasParking: false,
+    jummuahTime: null,
+    khutbahTime: null,
+  },
+  {
+    id: "7",
+    name: "Lewisham Islamic Centre",
+    address: "363-365 Lewisham High St, London SE13 6NZ",
+    lat: 51.4553,
+    lng: -0.0134,
+    distanceMiles: 5.2,
+    isOpen: true,
+    hasFemaleSpace: true,
+    hasWudu: true,
+    hasWheelchairAccess: true,
+    hasParking: false,
+    jummuahTime: "13:15",
+    khutbahTime: "12:45",
+  },
+  {
+    id: "8",
+    name: "North London Central Mosque",
+    address: "154-156 Park Rd, London N8 8JT",
+    lat: 51.5821,
+    lng: -0.1135,
+    distanceMiles: 4.0,
+    isOpen: false,
+    hasFemaleSpace: false,
+    hasWudu: true,
+    hasWheelchairAccess: false,
+    hasParking: true,
+    jummuahTime: "13:30",
+    khutbahTime: "13:00",
+  },
+];
