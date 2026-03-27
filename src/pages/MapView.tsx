@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Mosque } from "@/data/mosques";
@@ -7,12 +7,6 @@ import PrayerBanner from "@/components/PrayerBanner";
 import MosqueCard from "@/components/MosqueCard";
 import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const mosqueIcon = L.divIcon({
-  className: "mosque-marker",
-  html: "🕌",
-  iconSize: [32, 32],
-});
 
 interface Props {
   mosques: Mosque[];
@@ -23,6 +17,45 @@ interface Props {
 
 export default function MapView({ mosques, filter, onFilterChange, onSelectMosque }: Props) {
   const nearest = mosques[0] || null;
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    mapRef.current = L.map(containerRef.current, {
+      center: [51.5074, -0.1278],
+      zoom: 12,
+      zoomControl: false,
+      attributionControl: false,
+    });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapRef.current);
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear old markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    mosques.forEach((mosque) => {
+      const icon = L.divIcon({
+        className: "mosque-marker",
+        html: "🕌",
+        iconSize: [32, 32],
+      });
+      const marker = L.marker([mosque.lat, mosque.lng], { icon })
+        .addTo(mapRef.current!)
+        .bindPopup(`<strong>${mosque.name}</strong><br/>${mosque.distanceMiles} mi`);
+      markersRef.current.push(marker);
+    });
+  }, [mosques]);
 
   return (
     <div className="flex flex-col h-full relative">
@@ -37,24 +70,7 @@ export default function MapView({ mosques, filter, onFilterChange, onSelectMosqu
 
       {/* Map */}
       <div className="flex-1">
-        <MapContainer
-          center={[51.5074, -0.1278]}
-          zoom={12}
-          className="w-full h-full"
-          zoomControl={false}
-          attributionControl={false}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {mosques.map((m) => (
-            <Marker key={m.id} position={[m.lat, m.lng]} icon={mosqueIcon}>
-              <Popup>
-                <strong>{m.name}</strong>
-                <br />
-                {m.distanceMiles} mi
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+        <div ref={containerRef} className="w-full h-full" />
       </div>
 
       {/* Bottom section */}
