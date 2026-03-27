@@ -64,9 +64,32 @@ export default function MapView({ mosques, filter, onFilterChange, onSelectMosqu
     <div className="flex flex-col h-full relative">
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] bg-card/90 backdrop-blur-md">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="font-display text-xl font-bold text-forest">Musmapp</h1>
-          <MapPin size={20} className="text-forest" />
+        <div className="flex items-center justify-between px-4 py-3 gap-2">
+          {showSearch ? (
+            <div className="flex items-center flex-1 gap-2">
+              <Search size={18} className="text-muted-foreground shrink-0" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search mosques…"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              />
+              <button onClick={() => { onSearchChange(""); setShowSearch(false); }}>
+                <X size={18} className="text-muted-foreground" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 className="font-display text-xl font-bold text-forest">Musmapp</h1>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowSearch(true)}>
+                  <Search size={20} className="text-forest" />
+                </button>
+                <MapPin size={20} className="text-forest" />
+              </div>
+            </>
+          )}
         </div>
         <FilterChips active={filter} onChange={onFilterChange} />
       </div>
