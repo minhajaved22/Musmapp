@@ -55,7 +55,7 @@ export default function Index() {
                   search={search}
                   onSearchChange={setSearch}
                 />
-              ) : (
+              ) : tab === "list" ? (
                 <ListView
                   mosques={filtered}
                   filter={filter}
@@ -64,6 +64,8 @@ export default function Index() {
                   search={search}
                   onSearchChange={setSearch}
                 />
+              ) : (
+                <QiblaView />
               )}
             </div>
             <BottomNav active={tab} onChange={setTab} />
