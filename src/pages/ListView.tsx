@@ -1,16 +1,20 @@
+import { useState } from "react";
 import { Mosque } from "@/data/mosques";
 import FilterChips, { FilterType } from "@/components/FilterChips";
 import MosqueCard from "@/components/MosqueCard";
-import { MapPin } from "lucide-react";
+import { MapPin, Search, X } from "lucide-react";
 
 interface Props {
   mosques: Mosque[];
   filter: FilterType;
   onFilterChange: (f: FilterType) => void;
   onSelectMosque: (m: Mosque) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
 }
 
-export default function ListView({ mosques, filter, onFilterChange, onSelectMosque }: Props) {
+export default function ListView({ mosques, filter, onFilterChange, onSelectMosque, search, onSearchChange }: Props) {
+  const [showSearch, setShowSearch] = useState(false);
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
