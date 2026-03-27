@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import SplashScreen from "@/pages/SplashScreen";
 import MapView from "@/pages/MapView";
 import ListView from "@/pages/ListView";
+import QiblaView from "@/pages/QiblaView";
 import MosqueDetail from "@/pages/MosqueDetail";
 import { AnimatePresence } from "framer-motion";
 
