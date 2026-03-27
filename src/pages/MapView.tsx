@@ -13,9 +13,11 @@ interface Props {
   filter: FilterType;
   onFilterChange: (f: FilterType) => void;
   onSelectMosque: (m: Mosque) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
 }
 
-export default function MapView({ mosques, filter, onFilterChange, onSelectMosque }: Props) {
+export default function MapView({ mosques, filter, onFilterChange, onSelectMosque, search, onSearchChange }: Props) {
   const nearest = mosques[0] || null;
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
