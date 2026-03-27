@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import SplashScreen from "@/pages/SplashScreen";
 import MapView from "@/pages/MapView";
 import ListView from "@/pages/ListView";
+import QiblaView from "@/pages/QiblaView";
 import MosqueDetail from "@/pages/MosqueDetail";
 import { AnimatePresence } from "framer-motion";
 
@@ -12,7 +13,7 @@ type Screen = "splash" | "main";
 
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("splash");
-  const [tab, setTab] = useState<"map" | "list">("map");
+  const [tab, setTab] = useState<"map" | "list" | "qibla">("map");
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
@@ -54,7 +55,7 @@ export default function Index() {
                   search={search}
                   onSearchChange={setSearch}
                 />
-              ) : (
+              ) : tab === "list" ? (
                 <ListView
                   mosques={filtered}
                   filter={filter}
@@ -63,6 +64,8 @@ export default function Index() {
                   search={search}
                   onSearchChange={setSearch}
                 />
+              ) : (
+                <QiblaView />
               )}
             </div>
             <BottomNav active={tab} onChange={setTab} />
