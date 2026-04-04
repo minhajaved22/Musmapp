@@ -8,6 +8,7 @@ import ListView from "@/pages/ListView";
 import QiblaView from "@/pages/QiblaView";
 import MosqueDetail from "@/pages/MosqueDetail";
 import { AnimatePresence } from "framer-motion";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 type Screen = "splash" | "main";
 
@@ -28,14 +29,12 @@ export default function Index() {
   const [search, setSearch] = useState("");
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
   const [liveMosques, setLiveMosques] = useState<Mosque[]>([]);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Get user location early (on splash)
+  const geo = useGeolocation();
+
+  // Fetch location on mount
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setUserLocation({ lat: 51.5074, lng: -0.1278 })
-    );
+    geo.fetchLocation();
   }, []);
 
   const combinedMosques = useMemo(() => {
@@ -43,11 +42,10 @@ export default function Index() {
       (lm) => !allMosques.some((am) => am.id === lm.id)
     )];
 
-    // Recalculate distances from user location
     const withDist = combined.map((m) => ({
       ...m,
-      distanceMiles: userLocation
-        ? Math.round(haversineDistance(userLocation.lat, userLocation.lng, m.lat, m.lng) * 10) / 10
+      distanceMiles: geo.location
+        ? Math.round(haversineDistance(geo.location.lat, geo.location.lng, m.lat, m.lng) * 10) / 10
         : m.distanceMiles,
     }));
 
@@ -60,7 +58,7 @@ export default function Index() {
       })
       .filter((m) => !search || m.name.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => a.distanceMiles - b.distanceMiles);
-  }, [filter, search, liveMosques, userLocation]);
+  }, [filter, search, liveMosques, geo.location]);
 
   const handleSelect = useCallback((m: Mosque) => setSelectedMosque(m), []);
   const handleBack = useCallback(() => setSelectedMosque(null), []);
@@ -68,7 +66,10 @@ export default function Index() {
   if (screen === "splash") {
     return (
       <div className="phone-frame">
-        <SplashScreen onContinue={() => setScreen("main")} />
+        <SplashScreen
+          onContinue={() => setScreen("main")}
+          geo={geo}
+        />
       </div>
     );
   }
@@ -91,6 +92,9 @@ export default function Index() {
                   onSearchChange={setSearch}
                   liveMosques={liveMosques}
                   onLiveMosquesChange={setLiveMosques}
+                  userLocation={geo.location}
+                  locationError={geo.error}
+                  onRetryLocation={geo.retry}
                 />
               ) : tab === "list" ? (
                 <ListView
@@ -102,7 +106,7 @@ export default function Index() {
                   onSearchChange={setSearch}
                 />
               ) : (
-                <QiblaView />
+                <QiblaView userLocation={geo.location} locationError={geo.error} locationLoading={geo.loading} onRetryLocation={geo.retry} />
               )}
             </div>
             <BottomNav active={tab} onChange={setTab} />
