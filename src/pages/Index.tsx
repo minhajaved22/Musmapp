@@ -17,15 +17,21 @@ export default function Index() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const [selectedMosque, setSelectedMosque] = useState<Mosque | null>(null);
+  const [liveMosques, setLiveMosques] = useState<Mosque[]>([]);
 
-  const filtered = useMemo(() => {
-    return allMosques.filter((m) => {
-      if (filter === "female") return m.hasFemaleSpace;
-      if (filter === "open") return m.isOpen;
-      if (filter === "wudu") return m.hasWudu;
-      return true;
-    });
-  }, [filter]);
+  const combinedMosques = useMemo(() => {
+    const combined = [...allMosques, ...liveMosques.filter(
+      (lm) => !allMosques.some((am) => am.id === lm.id)
+    )];
+    return combined
+      .filter((m) => {
+        if (filter === "female") return m.hasFemaleSpace;
+        if (filter === "open") return m.isOpen;
+        if (filter === "wudu") return m.hasWudu;
+        return true;
+      })
+      .filter((m) => !search || m.name.toLowerCase().includes(search.toLowerCase()));
+  }, [filter, search, liveMosques]);
 
   const handleSelect = useCallback((m: Mosque) => setSelectedMosque(m), []);
   const handleBack = useCallback(() => setSelectedMosque(null), []);
