@@ -246,7 +246,7 @@ export default function MapView({
       {/* Bottom section */}
       <div className="absolute bottom-0 left-0 right-0 z-[1000]">
         <div className="space-y-3 pb-2">
-          <PrayerBanner />
+          <PrayerBanner location={userLocation} />
           <AnimatePresence mode="wait">
             {nearest && (
               <motion.div

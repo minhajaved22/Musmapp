@@ -11,7 +11,7 @@ interface Props {
 const PRAYER_NAMES = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"] as const;
 
 export default function MosqueDetail({ mosque, onBack }: Props) {
-  const { times, nextPrayer, loading } = usePrayerTimes();
+  const { times, nextPrayer, loading } = usePrayerTimes({ lat: mosque.lat, lng: mosque.lng });
 
   return (
     <motion.div
