@@ -10,7 +10,7 @@ interface GeoState {
 const GEO_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
   timeout: 15000,
-  maximumAge: 60000,
+  maximumAge: 0, // Always get fresh position, never use cached
 };
 
 function getErrorMessage(err: GeolocationPositionError): string {
