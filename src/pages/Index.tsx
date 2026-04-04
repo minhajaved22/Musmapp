@@ -54,12 +54,14 @@ export default function Index() {
             <div className="flex-1 min-h-0">
               {tab === "map" ? (
                 <MapView
-                  mosques={filtered}
+                  mosques={combinedMosques}
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
                   search={search}
                   onSearchChange={setSearch}
+                  liveMosques={liveMosques}
+                  onLiveMosquesChange={setLiveMosques}
                 />
               ) : tab === "list" ? (
                 <ListView
