@@ -15,7 +15,7 @@ interface Props {
   search: string;
   onSearchChange: (s: string) => void;
   liveMosques: Mosque[];
-  onLiveMosquesChange: (m: Mosque[]) => void;
+  onLiveMosquesChange: (m: Mosque[] | ((prev: Mosque[]) => Mosque[])) => void;
   userLocation: { lat: number; lng: number } | null;
   locationError: string | null;
   onRetryLocation: () => void;
@@ -79,50 +79,73 @@ export default function MapView({
 
     // Search for nearby mosques via Places API
     const service = new google.maps.places.PlacesService(map);
-    service.nearbySearch(
-      {
-        location: userLocation,
-        radius: 15000,
-        keyword: "mosque",
-      },
-      (results, status) => {
-        setLoading(false);
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
-          console.warn("Places API failed:", status, "— falling back to static mosques");
-          return;
+    const searchMosques = (center: { lat: number; lng: number }) => {
+      service.nearbySearch(
+        {
+          location: center,
+          radius: 50000,
+          keyword: "mosque",
+        },
+        (results, status) => {
+          setLoading(false);
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
+            console.warn("Places API failed:", status, "— falling back to static mosques");
+            return;
+          }
+
+          const found: Mosque[] = results
+            .filter((r) => r.geometry?.location)
+            .map((r, i) => {
+              const loc = r.geometry!.location!;
+              const dist = google.maps.geometry
+                ? google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                    loc
+                  ) / 1609.34
+                : 0;
+              return {
+                id: r.place_id || `live-${i}`,
+                name: r.name || "Mosque",
+                address: r.vicinity || "",
+                lat: loc.lat(),
+                lng: loc.lng(),
+                distanceMiles: Math.round(dist * 10) / 10,
+                isOpen: r.opening_hours?.isOpen?.() ?? true,
+                hasFemaleSpace: false,
+                hasWudu: false,
+                hasWheelchairAccess: false,
+                hasParking: false,
+                jummuahTime: null,
+                khutbahTime: null,
+              };
+            })
+            .sort((a, b) => a.distanceMiles - b.distanceMiles);
+
+          onLiveMosquesChange((prev) => {
+            const merged = [...prev];
+            for (const m of found) {
+              if (!merged.some((e) => e.id === m.id)) merged.push(m);
+            }
+            return merged.sort((a, b) => a.distanceMiles - b.distanceMiles);
+          });
         }
+      );
+    };
 
-        const found: Mosque[] = results
-          .filter((r) => r.geometry?.location)
-          .map((r, i) => {
-            const loc = r.geometry!.location!;
-            const dist = google.maps.geometry
-              ? google.maps.geometry.spherical.computeDistanceBetween(
-                  new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                  loc
-                ) / 1609.34
-              : 0;
-            return {
-              id: r.place_id || `live-${i}`,
-              name: r.name || "Mosque",
-              address: r.vicinity || "",
-              lat: loc.lat(),
-              lng: loc.lng(),
-              distanceMiles: Math.round(dist * 10) / 10,
-              isOpen: r.opening_hours?.isOpen?.() ?? true,
-              hasFemaleSpace: false,
-              hasWudu: false,
-              hasWheelchairAccess: false,
-              hasParking: false,
-              jummuahTime: null,
-              khutbahTime: null,
-            };
-          })
-          .sort((a, b) => a.distanceMiles - b.distanceMiles);
+    // Initial search around user
+    searchMosques(userLocation);
 
-        onLiveMosquesChange(found);
-      }
-    );
+    // Re-search when user pans/zooms to a new area
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    map.addListener("idle", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const center = map.getCenter();
+        if (center) {
+          searchMosques({ lat: center.lat(), lng: center.lng() });
+        }
+      }, 800);
+    });
 
     return () => {
       mapRef.current = null;
