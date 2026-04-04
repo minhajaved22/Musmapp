@@ -15,7 +15,7 @@ interface Props {
   search: string;
   onSearchChange: (s: string) => void;
   liveMosques: Mosque[];
-  onLiveMosquesChange: (m: Mosque[]) => void;
+  onLiveMosquesChange: (m: Mosque[] | ((prev: Mosque[]) => Mosque[])) => void;
   userLocation: { lat: number; lng: number } | null;
   locationError: string | null;
   onRetryLocation: () => void;
