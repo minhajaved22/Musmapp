@@ -1,14 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { mosques, Mosque } from "@/data/mosques";
-import { MapPin } from "lucide-react";
-
-interface Props {
-  onContinue: () => void;
-}
+import { MapPin, LocateFixed, AlertCircle } from "lucide-react";
 
 function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 3958.8; // miles
+  const R = 3958.8;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
@@ -17,30 +13,29 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function SplashScreen({ onContinue }: Props) {
-  const [nearest, setNearest] = useState<(Mosque & { dist: number }) | null>(null);
-  const [locating, setLocating] = useState(false);
+interface Props {
+  onContinue: () => void;
+  geo: {
+    location: { lat: number; lng: number } | null;
+    loading: boolean;
+    error: string | null;
+    retry: () => void;
+  };
+}
 
-  useEffect(() => {
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let best: (Mosque & { dist: number }) | null = null;
-        for (const m of mosques) {
-          const d = haversineDistance(latitude, longitude, m.lat, m.lng);
-          if (!best || d < best.dist) best = { ...m, dist: Math.round(d * 10) / 10 };
-        }
-        setNearest(best);
-        setLocating(false);
-      },
-      () => setLocating(false)
-    );
-  }, []);
+export default function SplashScreen({ onContinue, geo }: Props) {
+  const nearest = useMemo(() => {
+    if (!geo.location) return null;
+    let best: (Mosque & { dist: number }) | null = null;
+    for (const m of mosques) {
+      const d = haversineDistance(geo.location.lat, geo.location.lng, m.lat, m.lng);
+      if (!best || d < best.dist) best = { ...m, dist: Math.round(d * 10) / 10 };
+    }
+    return best;
+  }, [geo.location]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-card px-8 relative overflow-hidden">
-      {/* Gradient wash */}
       <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-mint/20 to-transparent" />
 
       <motion.div
@@ -65,7 +60,7 @@ export default function SplashScreen({ onContinue }: Props) {
         </p>
 
         <AnimatePresence mode="wait">
-          {locating ? (
+          {geo.loading ? (
             <motion.div
               key="locating"
               initial={{ opacity: 0 }}
@@ -75,6 +70,26 @@ export default function SplashScreen({ onContinue }: Props) {
             >
               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               Finding nearest mosque…
+            </motion.div>
+          ) : geo.error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-5 flex flex-col items-center gap-3 max-w-[280px]"
+            >
+              <div className="bg-destructive/10 rounded-2xl px-5 py-4 text-center">
+                <AlertCircle size={20} className="text-destructive mx-auto mb-2" />
+                <p className="text-sm text-foreground/80">{geo.error}</p>
+              </div>
+              <button
+                onClick={geo.retry}
+                className="flex items-center gap-2 text-sm text-forest font-semibold"
+              >
+                <LocateFixed size={16} />
+                Retry location
+              </button>
             </motion.div>
           ) : nearest ? (
             <motion.div
@@ -105,10 +120,10 @@ export default function SplashScreen({ onContinue }: Props) {
 
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={onContinue}
+          onClick={geo.error ? geo.retry : onContinue}
           className="btn-primary mt-10 text-base"
         >
-          {nearest ? "Let's go" : "Enable location"}
+          {geo.error ? "Enable location" : nearest ? "Let's go" : "Enable location"}
         </motion.button>
       </motion.div>
     </div>

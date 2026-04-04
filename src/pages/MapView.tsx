@@ -1,6 +1,6 @@
 /// <reference types="google.maps" />
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Search, X, MapPin } from "lucide-react";
+import { Search, X, MapPin, LocateFixed, AlertCircle } from "lucide-react";
 import { Mosque } from "@/data/mosques";
 import FilterChips, { FilterType } from "@/components/FilterChips";
 import PrayerBanner from "@/components/PrayerBanner";
@@ -16,6 +16,9 @@ interface Props {
   onSearchChange: (s: string) => void;
   liveMosques: Mosque[];
   onLiveMosquesChange: (m: Mosque[]) => void;
+  userLocation: { lat: number; lng: number } | null;
+  locationError: string | null;
+  onRetryLocation: () => void;
 }
 
 export default function MapView({
@@ -27,26 +30,20 @@ export default function MapView({
   onSearchChange,
   liveMosques,
   onLiveMosquesChange,
+  userLocation,
+  locationError,
+  onRetryLocation,
 }: Props) {
   const [showSearch, setShowSearch] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const nearest = mosques.length > 0 ? mosques[0] : liveMosques[0] || null;
   const allMosques = mosques.length > 0 ? mosques : liveMosques;
 
-  // Get user location
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setUserLocation({ lat: 51.5074, lng: -0.1278 }) // fallback London
-    );
-  }, []);
-
-  // Init Google Map
+  // Init Google Map when location becomes available
   useEffect(() => {
     if (!containerRef.current || !userLocation || mapRef.current) return;
 
@@ -136,7 +133,6 @@ export default function MapView({
   const updateMarkers = useCallback((mosquesToShow: Mosque[]) => {
     if (!mapRef.current) return;
 
-    // Clear old markers
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
 
@@ -199,7 +195,25 @@ export default function MapView({
       {/* Map */}
       <div className="flex-1 relative">
         <div ref={containerRef} className="w-full h-full" />
-        {loading && (
+
+        {/* Location error overlay */}
+        {locationError && !userLocation && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-[999]">
+            <div className="flex flex-col items-center gap-4 px-8 text-center max-w-[300px]">
+              <AlertCircle size={32} className="text-destructive" />
+              <p className="text-sm text-foreground/80">{locationError}</p>
+              <button
+                onClick={onRetryLocation}
+                className="flex items-center gap-2 text-sm font-semibold text-forest bg-mint/20 px-4 py-2 rounded-full"
+              >
+                <LocateFixed size={16} />
+                Retry location
+              </button>
+            </div>
+          </div>
+        )}
+
+        {loading && userLocation && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-[999]">
             <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
