@@ -56,7 +56,7 @@ function getCurrentAndNext(times: PrayerTimesData) {
   };
 }
 
-export function usePrayerTimes(): PrayerInfo {
+export function usePrayerTimes(location: { lat: number; lng: number } | null): PrayerInfo {
   const [times, setTimes] = useState<PrayerTimesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState("");
@@ -65,7 +65,12 @@ export function usePrayerTimes(): PrayerInfo {
   const [nextPrayerTime, setNextPrayerTime] = useState("");
 
   useEffect(() => {
-    fetch("https://api.aladhan.com/v1/timingsByCity?city=London&country=GB&method=2")
+    if (!location) return;
+
+    setLoading(true);
+    const url = `https://api.aladhan.com/v1/timings?latitude=${location.lat}&longitude=${location.lng}&method=2`;
+
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         const t = data.data.timings;
@@ -80,7 +85,7 @@ export function usePrayerTimes(): PrayerInfo {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [location?.lat, location?.lng]);
 
   useEffect(() => {
     if (!times) return;

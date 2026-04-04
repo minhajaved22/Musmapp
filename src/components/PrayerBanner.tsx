@@ -1,7 +1,11 @@
 import { usePrayerTimes } from "@/hooks/usePrayerTimes";
 
-export default function PrayerBanner() {
-  const { currentPrayer, nextPrayer, nextPrayerTime, countdown, loading } = usePrayerTimes();
+interface Props {
+  location: { lat: number; lng: number } | null;
+}
+
+export default function PrayerBanner({ location }: Props) {
+  const { currentPrayer, nextPrayer, countdown, loading } = usePrayerTimes(location);
 
   if (loading) {
     return (
