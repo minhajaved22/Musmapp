@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+/// <reference types="google.maps" />
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Search, X, MapPin } from "lucide-react";
 import { Mosque } from "@/data/mosques";
 import FilterChips, { FilterType } from "@/components/FilterChips";
 import PrayerBanner from "@/components/PrayerBanner";
 import MosqueCard from "@/components/MosqueCard";
-import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
@@ -16,50 +14,150 @@ interface Props {
   onSelectMosque: (m: Mosque) => void;
   search: string;
   onSearchChange: (s: string) => void;
+  liveMosques: Mosque[];
+  onLiveMosquesChange: (m: Mosque[]) => void;
 }
 
-export default function MapView({ mosques, filter, onFilterChange, onSelectMosque, search, onSearchChange }: Props) {
+export default function MapView({
+  mosques,
+  filter,
+  onFilterChange,
+  onSelectMosque,
+  search,
+  onSearchChange,
+  liveMosques,
+  onLiveMosquesChange,
+}: Props) {
   const [showSearch, setShowSearch] = useState(false);
-  const nearest = mosques[0] || null;
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  const nearest = mosques.length > 0 ? mosques[0] : liveMosques[0] || null;
+  const allMosques = mosques.length > 0 ? mosques : liveMosques;
+
+  // Get user location
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    mapRef.current = L.map(containerRef.current, {
-      center: [51.5074, -0.1278],
-      zoom: 12,
-      zoomControl: false,
-      attributionControl: false,
-    });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapRef.current);
-
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setUserLocation({ lat: 51.5074, lng: -0.1278 }) // fallback London
+    );
   }, []);
 
+  // Init Google Map
   useEffect(() => {
+    if (!containerRef.current || !userLocation || mapRef.current) return;
+
+    const map = new google.maps.Map(containerRef.current, {
+      center: userLocation,
+      zoom: 14,
+      disableDefaultUI: true,
+      zoomControl: false,
+      styles: [
+        { featureType: "poi", stylers: [{ visibility: "off" }] },
+        { featureType: "transit", stylers: [{ visibility: "off" }] },
+        { featureType: "water", stylers: [{ color: "#d4e8dc" }] },
+        { featureType: "landscape", stylers: [{ color: "#f0f5f1" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+      ],
+    });
+    mapRef.current = map;
+
+    // User location marker
+    new google.maps.Marker({
+      position: userLocation,
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#6A9E7F",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 3,
+      },
+      title: "You",
+    });
+
+    // Search for nearby mosques via Places API
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch(
+      {
+        location: userLocation,
+        radius: 5000,
+        keyword: "mosque",
+      },
+      (results, status) => {
+        setLoading(false);
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
+
+        const found: Mosque[] = results
+          .filter((r) => r.geometry?.location)
+          .map((r, i) => {
+            const loc = r.geometry!.location!;
+            const dist = google.maps.geometry
+              ? google.maps.geometry.spherical.computeDistanceBetween(
+                  new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                  loc
+                ) / 1609.34
+              : 0;
+            return {
+              id: r.place_id || `live-${i}`,
+              name: r.name || "Mosque",
+              address: r.vicinity || "",
+              lat: loc.lat(),
+              lng: loc.lng(),
+              distanceMiles: Math.round(dist * 10) / 10,
+              isOpen: r.opening_hours?.isOpen?.() ?? true,
+              hasFemaleSpace: false,
+              hasWudu: false,
+              hasWheelchairAccess: false,
+              hasParking: false,
+              jummuahTime: null,
+              khutbahTime: null,
+            };
+          })
+          .sort((a, b) => a.distanceMiles - b.distanceMiles);
+
+        onLiveMosquesChange(found);
+      }
+    );
+
+    return () => {
+      mapRef.current = null;
+    };
+  }, [userLocation]);
+
+  // Update markers when mosques change
+  const updateMarkers = useCallback((mosquesToShow: Mosque[]) => {
     if (!mapRef.current) return;
 
     // Clear old markers
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
 
-    mosques.forEach((mosque) => {
-      const icon = L.divIcon({
-        className: "mosque-marker",
-        html: "🕌",
-        iconSize: [32, 32],
+    mosquesToShow.forEach((mosque) => {
+      const marker = new google.maps.Marker({
+        position: { lat: mosque.lat, lng: mosque.lng },
+        map: mapRef.current!,
+        title: mosque.name,
+        icon: {
+          url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36"><text y="28" font-size="28">🕌</text></svg>`
+          ),
+          scaledSize: new google.maps.Size(36, 36),
+        },
       });
-      const marker = L.marker([mosque.lat, mosque.lng], { icon })
-        .addTo(mapRef.current!)
-        .bindPopup(`<strong>${mosque.name}</strong><br/>${mosque.distanceMiles} mi`);
+
+      marker.addListener("click", () => onSelectMosque(mosque));
       markersRef.current.push(marker);
     });
-  }, [mosques]);
+  }, [onSelectMosque]);
+
+  useEffect(() => {
+    updateMarkers(allMosques);
+  }, [allMosques, updateMarkers]);
 
   return (
     <div className="flex flex-col h-full relative">
@@ -96,8 +194,13 @@ export default function MapView({ mosques, filter, onFilterChange, onSelectMosqu
       </div>
 
       {/* Map */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <div ref={containerRef} className="w-full h-full" />
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-[999]">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
       </div>
 
       {/* Bottom section */}
