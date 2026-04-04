@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Search, X, MapPin } from "lucide-react";
 import { Mosque } from "@/data/mosques";
@@ -5,12 +6,6 @@ import FilterChips, { FilterType } from "@/components/FilterChips";
 import PrayerBanner from "@/components/PrayerBanner";
 import MosqueCard from "@/components/MosqueCard";
 import { motion, AnimatePresence } from "framer-motion";
-
-declare global {
-  interface Window {
-    google: typeof google;
-  }
-}
 
 interface Props {
   mosques: Mosque[];
