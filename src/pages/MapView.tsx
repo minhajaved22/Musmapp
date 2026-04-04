@@ -79,61 +79,68 @@ export default function MapView({
 
     // Search for nearby mosques via Places API
     const service = new google.maps.places.PlacesService(map);
-    const searchMosques = (center: { lat: number; lng: number }) => {
+
+    const parseResults = (results: google.maps.places.PlaceResult[]): Mosque[] =>
+      results
+        .filter((r) => r.geometry?.location)
+        .map((r, i) => {
+          const loc = r.geometry!.location!;
+          const dist = google.maps.geometry
+            ? google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                loc
+              ) / 1609.34
+            : 0;
+          return {
+            id: r.place_id || `live-${i}`,
+            name: r.name || "Mosque",
+            address: r.vicinity || "",
+            lat: loc.lat(),
+            lng: loc.lng(),
+            distanceMiles: Math.round(dist * 10) / 10,
+            isOpen: r.opening_hours?.isOpen?.() ?? true,
+            hasFemaleSpace: false,
+            hasWudu: false,
+            hasWheelchairAccess: false,
+            hasParking: false,
+            jummuahTime: null,
+            khutbahTime: null,
+          };
+        });
+
+    const mergeMosques = (found: Mosque[]) => {
+      onLiveMosquesChange((prev: Mosque[]) => {
+        const merged = [...prev];
+        for (const m of found) {
+          if (!merged.some((e) => e.id === m.id)) merged.push(m);
+        }
+        return merged.sort((a, b) => a.distanceMiles - b.distanceMiles);
+      });
+    };
+
+    const searchMosques = (center: { lat: number; lng: number }, radius: number) => {
       service.nearbySearch(
-        {
-          location: center,
-          radius: 50000,
-          keyword: "mosque",
-        },
-        (results, status) => {
+        { location: center, radius, keyword: "mosque" },
+        (results, status, pagination) => {
           setLoading(false);
           if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
-            console.warn("Places API failed:", status, "— falling back to static mosques");
+            console.warn("Places API failed:", status);
             return;
           }
+          mergeMosques(parseResults(results));
 
-          const found: Mosque[] = results
-            .filter((r) => r.geometry?.location)
-            .map((r, i) => {
-              const loc = r.geometry!.location!;
-              const dist = google.maps.geometry
-                ? google.maps.geometry.spherical.computeDistanceBetween(
-                    new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                    loc
-                  ) / 1609.34
-                : 0;
-              return {
-                id: r.place_id || `live-${i}`,
-                name: r.name || "Mosque",
-                address: r.vicinity || "",
-                lat: loc.lat(),
-                lng: loc.lng(),
-                distanceMiles: Math.round(dist * 10) / 10,
-                isOpen: r.opening_hours?.isOpen?.() ?? true,
-                hasFemaleSpace: false,
-                hasWudu: false,
-                hasWheelchairAccess: false,
-                hasParking: false,
-                jummuahTime: null,
-                khutbahTime: null,
-              };
-            })
-            .sort((a, b) => a.distanceMiles - b.distanceMiles);
-
-          onLiveMosquesChange((prev) => {
-            const merged = [...prev];
-            for (const m of found) {
-              if (!merged.some((e) => e.id === m.id)) merged.push(m);
-            }
-            return merged.sort((a, b) => a.distanceMiles - b.distanceMiles);
-          });
+          // Fetch next page of results if available (up to 60 total)
+          if (pagination?.hasNextPage) {
+            setTimeout(() => pagination.nextPage(), 2000);
+          }
         }
       );
     };
 
-    // Initial search around user
-    searchMosques(userLocation);
+    // Do multiple radius searches to cover the local area thoroughly
+    searchMosques(userLocation, 3000);   // 3km - immediate area
+    setTimeout(() => searchMosques(userLocation, 10000), 1500);  // 10km - wider area
+    setTimeout(() => searchMosques(userLocation, 30000), 3000);  // 30km - broader region
 
     // Re-search when user pans/zooms to a new area
     let debounceTimer: ReturnType<typeof setTimeout>;
@@ -141,8 +148,21 @@ export default function MapView({
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const center = map.getCenter();
-        if (center) {
-          searchMosques({ lat: center.lat(), lng: center.lng() });
+        const bounds = map.getBounds();
+        if (center && bounds) {
+          // Calculate visible radius from bounds
+          const ne = bounds.getNorthEast();
+          const sw = bounds.getSouthWest();
+          const visibleRadius = google.maps.geometry
+            ? google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(center.lat(), center.lng()),
+                ne
+              )
+            : 10000;
+          searchMosques(
+            { lat: center.lat(), lng: center.lng() },
+            Math.min(visibleRadius, 50000)
+          );
         }
       }, 800);
     });
