@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Compass, LocateFixed } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Kaaba coordinates
 const MECCA_LAT = 21.4225;
