@@ -65,7 +65,7 @@ export default function Index() {
                 />
               ) : tab === "list" ? (
                 <ListView
-                  mosques={filtered}
+                  mosques={combinedMosques}
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectMosque={handleSelect}
