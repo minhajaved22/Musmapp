@@ -90,7 +90,10 @@ export default function MapView({
       },
       (results, status) => {
         setLoading(false);
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
+          console.warn("Places API failed:", status, "— falling back to static mosques");
+          return;
+        }
 
         const found: Mosque[] = results
           .filter((r) => r.geometry?.location)
