@@ -82,7 +82,7 @@ export default function MapView({
     service.nearbySearch(
       {
         location: userLocation,
-        radius: 5000,
+        radius: 15000,
         keyword: "mosque",
       },
       (results, status) => {
