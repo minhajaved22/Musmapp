@@ -104,6 +104,8 @@ export default function QiblaView() {
   }, []);
 
   const rotation = qiblaAngle !== null ? qiblaAngle - heading : 0;
+  const normalizedDiff = Math.abs(((rotation % 360) + 360) % 360);
+  const facingQibla = normalizedDiff < 5 || normalizedDiff > 355;
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -128,8 +130,29 @@ export default function QiblaView() {
           >
             {/* Compass circle */}
             <div className="relative w-64 h-64">
+              {/* Glow ring behind compass when facing Qibla */}
+              <motion.div
+                className="absolute -inset-3 rounded-full"
+                animate={{
+                  boxShadow: facingQibla
+                    ? ["0 0 20px 4px hsla(145, 30%, 52%, 0.25)", "0 0 30px 8px hsla(145, 30%, 52%, 0.4)", "0 0 20px 4px hsla(145, 30%, 52%, 0.25)"]
+                    : "0 0 0px 0px transparent",
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: facingQibla ? Infinity : 0,
+                  ease: "easeInOut",
+                }}
+              />
+
               {/* Outer ring */}
-              <div className="absolute inset-0 rounded-full border-[3px] border-border" />
+              <motion.div
+                className="absolute inset-0 rounded-full border-[3px]"
+                animate={{
+                  borderColor: facingQibla ? "hsl(145, 30%, 52%)" : "hsl(var(--border))",
+                }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              />
               {/* Cardinal directions */}
               <span className="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground">N</span>
               <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-semibold text-muted-foreground">S</span>
@@ -143,17 +166,37 @@ export default function QiblaView() {
                 transition={{ type: "spring", stiffness: 50, damping: 15 }}
               >
                 {/* Needle line */}
-                <div className="absolute top-6 left-1/2 -translate-x-1/2 w-1 h-[calc(50%-24px)] bg-forest rounded-full origin-bottom" />
+                <motion.div
+                  className="absolute top-6 left-1/2 -translate-x-1/2 w-1 h-[calc(50%-24px)] rounded-full origin-bottom"
+                  animate={{ backgroundColor: facingQibla ? "hsl(145, 30%, 52%)" : "hsl(145, 30%, 32%)" }}
+                  transition={{ duration: 0.6 }}
+                />
                 {/* Kaaba icon at tip */}
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-8 h-8 bg-forest rounded-lg flex items-center justify-center shadow-md">
+                <motion.div
+                  className="absolute top-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-lg flex items-center justify-center"
+                  animate={{
+                    backgroundColor: facingQibla ? "hsl(145, 40%, 48%)" : "hsl(145, 30%, 32%)",
+                    boxShadow: facingQibla
+                      ? "0 0 16px 4px hsla(145, 40%, 48%, 0.4)"
+                      : "0 4px 6px -1px rgba(0,0,0,0.1)",
+                  }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                >
                   <span className="text-white text-sm">🕋</span>
-                </div>
+                </motion.div>
                 {/* Opposite end */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-1 h-[calc(50%-24px)] bg-muted-foreground/30 rounded-full origin-top" />
               </motion.div>
 
               {/* Center dot */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-mint rounded-full border-2 border-forest shadow-sm" />
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2"
+                animate={{
+                  backgroundColor: facingQibla ? "hsl(145, 40%, 80%)" : "hsl(var(--mint))",
+                  borderColor: facingQibla ? "hsl(145, 40%, 48%)" : "hsl(145, 30%, 32%)",
+                }}
+                transition={{ duration: 0.6 }}
+              />
             </div>
 
             {/* Info */}
