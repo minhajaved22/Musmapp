@@ -1,10 +1,43 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { mosques, Mosque } from "@/data/mosques";
+import { MapPin } from "lucide-react";
 
 interface Props {
   onContinue: () => void;
 }
 
+function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8; // miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function SplashScreen({ onContinue }: Props) {
+  const [nearest, setNearest] = useState<(Mosque & { dist: number }) | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  useEffect(() => {
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let best: (Mosque & { dist: number }) | null = null;
+        for (const m of mosques) {
+          const d = haversineDistance(latitude, longitude, m.lat, m.lng);
+          if (!best || d < best.dist) best = { ...m, dist: Math.round(d * 10) / 10 };
+        }
+        setNearest(best);
+        setLocating(false);
+      },
+      () => setLocating(false)
+    );
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-card px-8 relative overflow-hidden">
       {/* Gradient wash */}
@@ -30,16 +63,52 @@ export default function SplashScreen({ onContinue }: Props) {
           <br />
           wherever you are
         </p>
-        <p className="text-sm text-muted-foreground mt-2 max-w-[260px]">
-          Built for the moment you're out and need to pray now
-        </p>
+
+        <AnimatePresence mode="wait">
+          {locating ? (
+            <motion.div
+              key="locating"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"
+            >
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              Finding nearest mosque…
+            </motion.div>
+          ) : nearest ? (
+            <motion.div
+              key="nearest"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-5 bg-mint/15 rounded-2xl px-5 py-4 max-w-[280px]"
+            >
+              <div className="flex items-center gap-2 text-forest font-semibold text-base">
+                <MapPin size={18} />
+                {nearest.name}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {nearest.dist} miles away · {nearest.isOpen ? "Open now" : "Closed"}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.p
+              key="fallback"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-sm text-muted-foreground mt-5 max-w-[260px]"
+            >
+              Built for the moment you're out and need to pray now
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={onContinue}
           className="btn-primary mt-10 text-base"
         >
-          Enable location
+          {nearest ? "Let's go" : "Enable location"}
         </motion.button>
       </motion.div>
     </div>
