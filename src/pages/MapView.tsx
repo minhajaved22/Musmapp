@@ -49,7 +49,7 @@ export default function MapView({
 
     const map = new google.maps.Map(containerRef.current, {
       center: userLocation,
-      zoom: 14,
+      zoom: 13,
       disableDefaultUI: true,
       zoomControl: false,
       styles: [
