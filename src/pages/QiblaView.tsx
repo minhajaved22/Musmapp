@@ -207,6 +207,20 @@ export default function QiblaView() {
               <p className="text-sm text-muted-foreground">from North</p>
             </div>
 
+            <AnimatePresence>
+              {facingQibla && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="bg-primary/15 text-forest text-sm font-semibold px-5 py-2 rounded-full"
+                >
+                  ✓ Facing Qibla
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {!hasCompass && (
               <div className="bg-mint/20 text-accent-foreground text-xs font-medium px-4 py-2 rounded-full text-center max-w-[260px]">
                 Compass not available — rotate your phone to orient manually
