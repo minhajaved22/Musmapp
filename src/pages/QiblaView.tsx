@@ -55,16 +55,23 @@ export default function QiblaView() {
 
   useEffect(() => {
     const handler = (e: DeviceOrientationEvent) => {
-      if (e.alpha !== null) {
-        setHeading(e.alpha);
+      // iOS provides webkitCompassHeading (degrees from true north, clockwise)
+      // Android/desktop: alpha is degrees counterclockwise from north
+      const evt = e as any;
+      if (typeof evt.webkitCompassHeading === "number") {
+        setHeading(evt.webkitCompassHeading);
+      } else if (e.alpha !== null) {
+        // On Android, alpha=0 means pointing north, increases counterclockwise
+        // Convert to clockwise compass heading
+        setHeading((360 - e.alpha) % 360);
       }
     };
 
-    // Check for compass support
     if ("DeviceOrientationEvent" in window) {
-      // iOS 13+ requires permission
       const DOE = DeviceOrientationEvent as any;
       if (typeof DOE.requestPermission === "function") {
+        // iOS 13+ — permission must be triggered by user gesture
+        // We'll request on first render; if it fails, show the button
         DOE.requestPermission()
           .then((permission: string) => {
             if (permission === "granted") {
@@ -76,7 +83,6 @@ export default function QiblaView() {
           .catch(() => setHasCompass(false));
       } else {
         window.addEventListener("deviceorientation", handler, true);
-        // Detect if compass data is actually coming
         const timeout = setTimeout(() => {
           setHasCompass(false);
         }, 3000);
