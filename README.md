@@ -6,6 +6,8 @@ Musmapp is a mobile-first web app that helps Muslims in London find a place to p
 
 **Live app:** https://musmapp-prayer-space-finder.lovable.app/
 
+**Slide deck:** https://www.canva.com/design/DAHFKIJ5lsA/UPzqeOVDmtn1i4EEyRlX2Q/view
+
 I built Musmapp as an end-to-end product project. I moved between Karachi, where mosques are on every corner but rarely have space for women, and London, where there are more women's spaces but no easy way to find them. This repo holds the working prototype. The thinking behind it (problem, personas, competitors and roadmap) is summarised below.
 
 ## What it does
@@ -40,7 +42,6 @@ I built Musmapp as an end-to-end product project. I moved between Karachi, where
 
 1. **Now: mosque finder.** Web app, user testing and iteration, then iOS and Android.
 2. **Next: Muslim events.** Find talks and events nearby and link out to ticketing.
-3. **Later: halal food map.** Halal food sourced through APIs and a curated database.
 
 A database integration is also in progress to hold facility data that Google Maps does not provide.
 
